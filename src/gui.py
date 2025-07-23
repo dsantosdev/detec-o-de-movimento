@@ -26,14 +26,15 @@ class MainGUI:
         self.metadata_label.pack(side=tk.TOP, fill=tk.X)
         
         self.video_label = tk.Label(self.root)
-        self.video_label.pack(pady=10)
+        self.video_label.place(relx=0.5, rely=0.5, anchor="center")  # Centered with place for stacking
+        self.video_label.lower()  # Ensure video is behind other elements
         
         self.thumbnail_label = tk.Label(self.root)
         self.thumbnail_label.place(relx=0.8, rely=0.1, anchor="ne")
         self.thumbnail_label.bind("<Button-1>", self.toggle_thumbnail)
         
         self.button_frame = tk.Frame(self.root)
-        self.button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)  # Fixed at bottom
+        self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom, above video/image
         buttons = [
             "Sem motivo aparente",
             "Evento devido à...",
@@ -101,7 +102,7 @@ class MainGUI:
             self.thumbnail = ImageTk.PhotoImage(img)
             self.thumbnail_label.configure(image=self.thumbnail)
             self.thumbnail_label.image = self.thumbnail
-            self.full_image = ImageTk.PhotoImage(Image.open(image_path))
+            self.full_image = ImageTk.PhotoImage(Image.open(image_path).resize((self.root.winfo_screenwidth(), self.root.winfo_screenheight()), Image.Resampling.LANCZOS))
             self.is_fullscreen = False
             self.logger.info(f"Thumbnail loaded: {image_path}")
             
@@ -129,6 +130,7 @@ class MainGUI:
             self.video_label.configure(image=self.full_image)
             self.thumbnail_label.configure(image='')  # Hide thumbnail
             self.video_label.bind("<Button-1>", self.toggle_thumbnail)  # Bind click to minimize
+            self.video_label.lift()  # Bring expanded image to front
             self.is_fullscreen = True
             self.logger.info("Thumbnail expanded to full-screen")
         else:
