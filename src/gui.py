@@ -33,7 +33,7 @@ class MainGUI:
         self.thumbnail_label.bind("<Button-1>", self.toggle_thumbnail)
         
         self.button_frame = tk.Frame(self.root)
-        self.button_frame.pack(pady=10)
+        self.button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)  # Fixed at bottom
         buttons = [
             "Sem motivo aparente",
             "Evento devido à...",
@@ -42,7 +42,7 @@ class MainGUI:
             "Pausar por 1 minuto"
         ]
         for text in buttons:
-            tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5)
+            tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
         
         self.log_window = None
         self.root.bind("<Control-F12>", self.toggle_log_window)
@@ -87,7 +87,7 @@ class MainGUI:
         # Get camera number from map, default to 0 if not found
         camera_number = self.camera_map.get(camera_name, "0")
         # Construct live stream URL
-        stream_url = f"http://localhost/camera{camera_number}.cgi"
+        stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={camera_number}"
         self.logger.info(f"Using stream URL: {stream_url}")
         if self.stream is None:
             self.stream = VideoStream(self.video_label, stream_url)
