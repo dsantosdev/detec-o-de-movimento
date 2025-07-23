@@ -26,7 +26,7 @@ class MainGUI:
         self.metadata_label.pack(side=tk.TOP, fill=tk.X)
         
         self.video_label = tk.Label(self.root)
-        self.video_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.video_label.place(relx=0.5, rely=0.5, anchor="center", width=self.root.winfo_screenwidth(), height=self.root.winfo_screenheight())
         self.video_label.lower()  # Ensure video is behind other elements
         
         self.image_label = tk.Label(self.root)  # Separate label for expanded image
@@ -38,7 +38,8 @@ class MainGUI:
         self.thumbnail_label.bind("<Button-1>", self.toggle_thumbnail)
         
         self.button_frame = tk.Frame(self.root)
-        self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom, above video/image
+        self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom
+        self.button_frame.lift()  # Ensure buttons are always in front
         buttons = [
             "Sem motivo aparente",
             "Evento devido à...",
@@ -143,6 +144,7 @@ class MainGUI:
         else:
             self.image_label.configure(image='')
             self.thumbnail_label.configure(image=self.thumbnail)  # Show thumbnail again
+            self.video_label.lift()  # Bring video back to front after minimizing
             self.image_label.unbind("<Button-1>")  # Unbind click
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
