@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-import urllib.request
 import threading
 from logger import get_logger
+from PIL import Image, ImageTk
 
 class VideoStream:
     def __init__(self, label, url):
@@ -10,6 +10,7 @@ class VideoStream:
         self.url = url
         self.logger = get_logger()
         self.running = False
+        self.frame = None
 
     def start(self):
         self.running = True
@@ -18,24 +19,28 @@ class VideoStream:
 
     def update(self):
         try:
-            stream = urllib.request.urlopen(self.url)
-            bytes = bytes()
+            cap = cv2.VideoCapture(self.url)
+            if not cap.isOpened():
+                self.logger.error(f"Failed to open video stream: {self.url}")
+                self.running = False
+                return
             while self.running:
-                bytes += stream.read(1024)
-                a = bytes.find(b'\xff\xd8')
-                b = bytes.find(b'\xff\xd9')
-                if a != -1 and b != -1:
-                    jpg = bytes[a:b+2]
-                    bytes = bytes[b+2:]
-                    frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    img = Image.fromarray(frame)
-                    img = ImageTk.PhotoImage(img)
-                    self.label.configure(image=img)
-                    self.label.image = img
+                ret, frame = cap.read()
+                if ret:
+                    self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(self.frame)
+                    imgtk = ImageTk.PhotoImage(image=img)
+                    self.label.configure(image=imgtk)
+                    self.label.image = imgtk
+                else:
+                    self.logger.warning("No frame received from stream")
+            cap.release()
         except Exception as e:
             self.logger.error(f"Error in video stream: {e}")
             self.running = False
+        finally:
+            if 'cap' in locals():
+                cap.release()
 
     def stop(self):
         self.running = False
