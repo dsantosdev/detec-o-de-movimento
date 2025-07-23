@@ -36,6 +36,7 @@ class MainGUI:
         self.thumbnail_label = tk.Label(self.root)
         self.thumbnail_label.place(relx=0.8, rely=0.1, anchor="ne")
         self.thumbnail_label.bind("<Button-1>", self.toggle_thumbnail)
+        self.thumbnail_label.lift()  # Ensure thumbnail is above video
         
         self.button_frame = tk.Frame(self.root)
         self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom
@@ -145,6 +146,7 @@ class MainGUI:
             self.image_label.configure(image='')
             self.image_label.place(relx=0.5, rely=0.5, anchor="center")  # Reset position
             self.video_label.lift()  # Bring video back to front
+            self.thumbnail_label.lift()  # Ensure thumbnail stays visible
             self.button_frame.lift()  # Ensure buttons reappear
             self.image_label.unbind("<Button-1>")  # Unbind click
             self.is_fullscreen = False
