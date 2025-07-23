@@ -26,8 +26,12 @@ class MainGUI:
         self.metadata_label.pack(side=tk.TOP, fill=tk.X)
         
         self.video_label = tk.Label(self.root)
-        self.video_label.place(relx=0.5, rely=0.5, anchor="center")  # Centered with place for stacking
+        self.video_label.place(relx=0.5, rely=0.5, anchor="center")
         self.video_label.lower()  # Ensure video is behind other elements
+        
+        self.image_label = tk.Label(self.root)  # Separate label for expanded image
+        self.image_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.image_label.lower()  # Initially behind
         
         self.thumbnail_label = tk.Label(self.root)
         self.thumbnail_label.place(relx=0.8, rely=0.1, anchor="ne")
@@ -102,7 +106,9 @@ class MainGUI:
             self.thumbnail = ImageTk.PhotoImage(img)
             self.thumbnail_label.configure(image=self.thumbnail)
             self.thumbnail_label.image = self.thumbnail
-            self.full_image = ImageTk.PhotoImage(Image.open(image_path).resize((self.root.winfo_screenwidth(), self.root.winfo_screenheight()), Image.Resampling.LANCZOS))
+            # Load full-screen image
+            full_img = Image.open(image_path).resize((self.root.winfo_screenwidth(), self.root.winfo_screenheight()), Image.Resampling.LANCZOS)
+            self.full_image = ImageTk.PhotoImage(full_img)
             self.is_fullscreen = False
             self.logger.info(f"Thumbnail loaded: {image_path}")
             
@@ -127,16 +133,17 @@ class MainGUI:
 
     def toggle_thumbnail(self, event):
         if not self.is_fullscreen:
-            self.video_label.configure(image=self.full_image)
+            self.image_label.configure(image=self.full_image)
             self.thumbnail_label.configure(image='')  # Hide thumbnail
-            self.video_label.bind("<Button-1>", self.toggle_thumbnail)  # Bind click to minimize
-            self.video_label.lift()  # Bring expanded image to front
+            self.image_label.place(relx=0.5, rely=0.5, anchor="center", width=self.root.winfo_screenwidth(), height=self.root.winfo_screenheight())
+            self.image_label.lift()  # Bring expanded image to front
+            self.image_label.bind("<Button-1>", self.toggle_thumbnail)  # Bind click to minimize
             self.is_fullscreen = True
             self.logger.info("Thumbnail expanded to full-screen")
         else:
-            self.video_label.configure(image='')
+            self.image_label.configure(image='')
             self.thumbnail_label.configure(image=self.thumbnail)  # Show thumbnail again
-            self.video_label.unbind("<Button-1>")  # Unbind click
+            self.image_label.unbind("<Button-1>")  # Unbind click
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
 
