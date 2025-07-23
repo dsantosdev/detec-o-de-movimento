@@ -40,6 +40,7 @@ class MainGUI:
         self.button_frame = tk.Frame(self.root)
         self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom
         self.button_frame.lift()  # Ensure buttons are always in front
+        self.button_frame.lower(self.root)  # Keep buttons above all other widgets
         buttons = [
             "Sem motivo aparente",
             "Evento devido à...",
@@ -139,12 +140,14 @@ class MainGUI:
             self.image_label.place(relx=0.5, rely=0.5, anchor="center", width=self.root.winfo_screenwidth(), height=self.root.winfo_screenheight())
             self.image_label.lift()  # Bring expanded image to front
             self.image_label.bind("<Button-1>", self.toggle_thumbnail)  # Bind click to minimize
+            self.button_frame.lift()  # Ensure buttons stay in front
             self.is_fullscreen = True
             self.logger.info("Thumbnail expanded to full-screen")
         else:
             self.image_label.configure(image='')
             self.thumbnail_label.configure(image=self.thumbnail)  # Show thumbnail again
-            self.video_label.lift()  # Bring video back to front after minimizing
+            self.video_label.lift()  # Bring video back to front
+            self.button_frame.lift()  # Ensure buttons reappear
             self.image_label.unbind("<Button-1>")  # Unbind click
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
