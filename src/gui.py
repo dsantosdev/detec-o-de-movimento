@@ -59,13 +59,13 @@ class MainGUI:
                 auth=HTTPBasicAuth("admin", "@Dm1n")
             )
             response.raise_for_status()
-            # Parse response (e.g., "camera0=0&camera1=1")
+            # Parse response (e.g., "0=ARB [ BAL ] Pátio.ARB [ BAL ] Pátio")
             pairs = response.text.split("&")
             for pair in pairs:
                 if "=" in pair:
-                    name, number = pair.split("=")
-                    # Extract camera name (between . and =, if any, else full name before =)
-                    camera_name = name.split(".")[-1] if "." in name else name
+                    number, name = pair.split("=")
+                    # Extract camera name (before the first . if it exists)
+                    camera_name = name.split(".")[0] if "." in name else name
                     self.camera_map[camera_name] = number
                     self.logger.info(f"Parsed camera: {camera_name} = {number}")
             print("Stored Camera Map:", self.camera_map)
