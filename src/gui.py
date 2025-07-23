@@ -68,9 +68,7 @@ class MainGUI:
                     camera_name = name.split(".")[0] if "." in name else name
                     self.camera_map[camera_name] = number
                     self.logger.info(f"Parsed camera: {camera_name} = {number}")
-            print("Stored Camera Map:", self.camera_map)
         except Exception as e:
-            print(f"Error fetching API data: {e}")
             self.logger.error(f"Error fetching API data: {e}")
 
     def show_interface(self, image_path):
