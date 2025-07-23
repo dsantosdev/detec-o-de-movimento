@@ -40,7 +40,6 @@ class MainGUI:
         self.button_frame = tk.Frame(self.root)
         self.button_frame.place(relx=0.5, rely=1.0, anchor="s")  # Fixed at bottom
         self.button_frame.lift()  # Ensure buttons are always in front
-        self.button_frame.lower(self.root)  # Keep buttons above all other widgets
         buttons = [
             "Sem motivo aparente",
             "Evento devido à...",
