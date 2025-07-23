@@ -86,6 +86,7 @@ class MainGUI:
         camera_number = self.camera_map.get(camera_name, "0")
         # Construct live stream URL
         stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={camera_number}"
+        print(f"Stream URL: {stream_url}")  # Print the URL
         self.logger.info(f"Using stream URL: {stream_url}")
         if self.stream is None:
             self.stream = VideoStream(self.video_label, stream_url)
