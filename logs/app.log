@@ -1,0 +1,23 @@
+2025-07-23 14:11:28,645 - INFO - Starting application
+2025-07-23 14:11:28,651 - INFO - Monitoring folder: \\srvftp\monitoramento\FTP\0000
+2025-07-23 15:11:49,026 - INFO - Starting application
+2025-07-23 15:11:49,032 - INFO - Monitoring folder: \\srvftp\monitoramento\FTP\0000
+2025-07-23 15:11:49,103 - INFO - Started monitoring folder: \\srvftp\monitoramento\FTP\0000
+2025-07-23 15:11:49,104 - INFO - Application initialized
+2025-07-23 15:11:59,524 - INFO - Log window opened
+2025-07-23 15:13:49,710 - INFO - New image detected: \\srvftp\monitoramento\FTP\0000\20220719-224839_10.2.14.224_PMA [ BAL ] Carga_0000.jpg
+2025-07-23 15:13:49,710 - INFO - Showing interface for image: \\srvftp\monitoramento\FTP\0000\20220719-224839_10.2.14.224_PMA [ BAL ] Carga_0000.jpg
+2025-07-23 15:13:49,727 - INFO - Video stream started
+2025-07-23 15:13:49,937 - INFO - Thumbnail loaded: \\srvftp\monitoramento\FTP\0000\20220719-224839_10.2.14.224_PMA [ BAL ] Carga_0000.jpg
+2025-07-23 15:13:51,006 - ERROR - Error in video stream: <urlopen error [Errno 11001] getaddrinfo failed>
+2025-07-23 15:14:06,070 - INFO - Thumbnail expanded to fullscreen
+2025-07-23 15:14:11,267 - INFO - Thumbnail minimized
+2025-07-23 15:14:11,798 - INFO - Thumbnail expanded to fullscreen
+2025-07-23 15:14:12,301 - INFO - Thumbnail minimized
+2025-07-23 15:14:12,866 - INFO - Thumbnail expanded to fullscreen
+2025-07-23 15:14:13,896 - INFO - Thumbnail minimized
+2025-07-23 15:14:15,452 - INFO - Thumbnail expanded to fullscreen
+2025-07-23 15:14:19,495 - INFO - Thumbnail closed
+2025-07-23 15:14:20,907 - INFO - Thumbnail expanded to fullscreen
+2025-07-23 15:14:22,823 - INFO - Thumbnail minimized
+2025-07-23 15:14:24,242 - INFO - Button clicked: Sem motivo aparente
