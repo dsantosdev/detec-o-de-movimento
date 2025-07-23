@@ -34,7 +34,7 @@ class MainGUI:
         self.image_label.lower()  # Initially behind
         
         self.thumbnail_label = tk.Label(self.root)
-        self.thumbnail_label.place(relx=0.8, rely=0.1, anchor="ne")
+        self.thumbnail_label.place(relx=0.01, rely=0.01, anchor="nw")  # Top-left corner, outside video
         self.thumbnail_label.bind("<Button-1>", self.toggle_thumbnail)
         self.thumbnail_label.lift()  # Ensure thumbnail is above video
         
