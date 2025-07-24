@@ -21,7 +21,6 @@ class MainGUI:
         self.camera_map = {}
         self.image_queue = Queue()  # Queue for image processing
         self.current_image = None
-        self.is_treated = False  # Flag to track if image is treated
         
         # Set window to always on top
         self.root.attributes('-topmost', True)
@@ -51,14 +50,10 @@ class MainGUI:
             "Evento devido à...",
             "Inibir detecções por...",
             "Escolher motivo",
-            "Pausar por 1 minuto",
-            "Tratar Imagem"  # New button to mark image as treated
+            "Pausar por 1 minuto"
         ]
         for text in buttons:
-            if text == "Tratar Imagem":
-                tk.Button(self.button_frame, text=text, command=self.mark_as_treated).pack(side=tk.LEFT, padx=5, pady=5)
-            else:
-                tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
+            tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
         
         self.log_window = None
         self.root.bind("<Control-F12>", self.toggle_log_window)
@@ -68,11 +63,6 @@ class MainGUI:
 
     def button_action(self, text):
         self.logger.info(f"Button clicked: {text}")
-
-    def mark_as_treated(self):
-        self.is_treated = True
-        self.logger.info("Image marked as treated")
-        self.process_next_image()  # Proceed to next image after treating
 
     def fetch_camera_names(self):
         try:
@@ -115,18 +105,19 @@ class MainGUI:
             for image in images:
                 self.image_queue.put(image)
             self.logger.info(f"Queued {len(images)} initial images")
-            self.process_next_image()
+            if not self.current_image and not self.image_queue.empty():
+                self.current_image = self.image_queue.get()
+                self.show_interface(self.current_image)
         else:
             self.logger.warning(f"Image folder not found: {image_folder}")
 
     def process_next_image(self):
-        if not self.image_queue.empty() and self.current_image is None and self.is_treated:
+        if not self.image_queue.empty() and self.current_image is None:
             self.current_image = self.image_queue.get()
-            self.is_treated = False  # Reset treated flag for new image
             self.show_interface(self.current_image)
         else:
             self.current_image = None
-            self.logger.info("No more images to process, currently processing, or image not treated")
+            self.logger.info("No more images to process or currently processing")
 
     def show_interface(self, image_path):
         self.logger.info(f"Showing interface for image: {image_path}")
@@ -192,6 +183,7 @@ class MainGUI:
             self.image_label.unbind("<Button-1>")
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
+            self.process_next_image()  # Process next image only after minimizing
 
     def toggle_log_window(self, event):
         if self.log_window is None or not self.log_window.winfo_exists():
