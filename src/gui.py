@@ -8,6 +8,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 from queue import Queue
 import socket
+import threading
+import time
 
 class MainGUI:
     processing_lock = True  # Bloqueia processamento até "Sem motivo aparente"
@@ -49,7 +51,7 @@ class MainGUI:
         self.root.bind("<Control-F12>", self.toggle_log_window)
         self.root.bind("<Control-n>", self.next_image)
         self.root.withdraw()
-        self.check_initial_images()
+        self.start_monitoring()
 
     def button_action(self, text):
         self.logger.info(f"Button clicked: {text}")
@@ -96,40 +98,44 @@ class MainGUI:
         except Exception as e:
             self.logger.error(f"Error fetching API data: {e}")
 
-    def check_initial_images(self):
-        self.logger.info("Checking initial images")
+    def start_monitoring(self):
+        self.fetch_camera_names()  # Carrega nomes de câmeras primeiro
+        threading.Thread(target=self.monitor_folder, daemon=True).start()
+        if not self.current_image and not self.image_queue.empty():
+            MainGUI.processing_lock = False
+            self.current_image = self.image_queue.get()
+            match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
+            if match:
+                camera_name = match.group(3)
+                self.current_camera_number = self.camera_map.get(camera_name, "0")
+                self.stream = VideoStream(self.video_label, f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}")
+                self.stream.start()
+            self.load_thumbnail(self.current_image)
+            MainGUI.processing_lock = True
+        self.root.deiconify()
+
+    def monitor_folder(self):
         ip = socket.gethostbyname(socket.gethostname())
         folder_map = {"192.9.100.100": "0000", "192.9.100.102": "0001", "192.9.100.106": "0002", "192.9.100.109": "0003", "192.9.100.114": "0004", "192.9.100.118": "0005", "192.9.100.123": "0006"}
         folder = folder_map.get(ip, "0000")
         image_folder = r"\\srvftp\monitoramento\FTP\{}".format(folder)
-        if os.path.exists(image_folder):
-            images = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith(('.jpg', '.png'))]
-            def sort_key(image):
-                has_def = "[ DEF ]" in os.path.basename(image)
-                return (not has_def, os.path.getmtime(image))
-            images.sort(key=sort_key)
-            for image in images:
-                self.image_queue.put(image)
-            self.logger.info(f"Queued {len(images)} images")
-            if not self.current_image and not self.image_queue.empty():
-                MainGUI.processing_lock = False  # Libera lock para carregar primeira imagem
-                self.current_image = self.image_queue.get()
-                self.fetch_camera_names()  # Garante que camera_map esteja preenchido
-                match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
-                if match:
-                    camera_name = match.group(3)
-                    self.current_camera_number = self.camera_map.get(camera_name, "0")
-                    self.stream = VideoStream(self.video_label, f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}")
-                    self.stream.start()
-                self.load_thumbnail(self.current_image)
-                MainGUI.processing_lock = True  # Reloca após carregar
-        else:
-            self.logger.warning(f"Folder not found: {image_folder}")
+        last_files = set()
+        
+        while True:
+            if os.path.exists(image_folder):
+                current_files = set(os.listdir(image_folder))
+                new_files = [f for f in current_files if f.endswith(('.jpg', '.png')) and f not in last_files]
+                if new_files and MainGUI.processing_lock:
+                    for new_file in new_files:
+                        image_path = os.path.join(image_folder, new_file)
+                        self.image_queue.put(image_path)
+                        self.logger.info(f"New image detected: {image_path}")
+                last_files = current_files
+            time.sleep(1)  # Checa a cada segundo
 
     def process_next_image(self):
         if not self.image_queue.empty() and self.current_image is None and not MainGUI.processing_lock:
             self.current_image = self.image_queue.get()
-            self.fetch_camera_names()
             match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
             if match:
                 camera_name = match.group(3)
