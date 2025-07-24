@@ -53,7 +53,10 @@ class MainGUI:
             "Pausar por 1 minuto"
         ]
         for text in buttons:
-            tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
+            if text == "Sem motivo aparente":
+                tk.Button(self.button_frame, text=text, command=self.handle_no_reason).pack(side=tk.LEFT, padx=5, pady=5)
+            else:
+                tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
         
         self.log_window = None
         self.root.bind("<Control-F12>", self.toggle_log_window)
@@ -69,6 +72,12 @@ class MainGUI:
         if self.current_image is not None:
             self.process_next_image()
             self.logger.info("Moved to next image with Ctrl+N")
+
+    def handle_no_reason(self):
+        if self.current_image and os.path.exists(self.current_image):
+            os.remove(self.current_image)
+            self.logger.info(f"Deleted image: {self.current_image}")
+            self.process_next_image()  # Move to next image and update video/thumbnail
 
     def fetch_camera_names(self):
         try:
@@ -189,7 +198,6 @@ class MainGUI:
             self.image_label.unbind("<Button-1>")
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
-            # Removed automatic process_next_image() call
 
     def toggle_log_window(self, event):
         if self.log_window is None or not self.log_window.winfo_exists():
