@@ -1,3 +1,4 @@
+from config import BASE_PATH, IP_FOLDER_MAPPING
 import tkinter as tk
 from PIL import Image, ImageTk
 from video_stream import VideoStream
@@ -12,7 +13,7 @@ import threading
 import time
 
 class MainGUI:
-    processing_lock = True  # Bloqueia processamento até "Sem motivo aparente"
+    processing_lock = False  # Inicia desbloqueado
 
     def __init__(self, root):
         self.root = root
@@ -49,17 +50,11 @@ class MainGUI:
                 tk.Button(self.button_frame, text=text, command=lambda t=text: self.button_action(t)).pack(side=tk.LEFT, padx=5, pady=5)
         self.log_window = None
         self.root.bind("<Control-F12>", self.toggle_log_window)
-        self.root.bind("<Control-n>", self.next_image)
         self.root.withdraw()
         self.start_monitoring()
 
     def button_action(self, text):
         self.logger.info(f"Button clicked: {text}")
-
-    def next_image(self, event):
-        if self.current_image is not None and not MainGUI.processing_lock:
-            self.process_next_image()
-            self.logger.info("Moved to next image with Ctrl+N")
 
     def handle_no_reason(self):
         if self.current_image and os.path.exists(self.current_image):
@@ -106,9 +101,9 @@ class MainGUI:
 
     def initialize_first_image(self):
         ip = socket.gethostbyname(socket.gethostname())
-        folder_map = {"192.9.100.100": "0000", "192.9.100.102": "0001", "192.9.100.106": "0002", "192.9.100.109": "0003", "192.9.100.114": "0004", "192.9.100.118": "0005", "192.9.100.123": "0006"}
+        folder_map = IP_FOLDER_MAPPING
         folder = folder_map.get(ip, "0000")
-        image_folder = r"\\srvftp\monitoramento\FTP\{}".format(folder)
+        image_folder = os.path.join(BASE_PATH, folder)
         if os.path.exists(image_folder):
             images = [os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.endswith(('.jpg', '.png'))]
             def sort_key(image):
@@ -124,13 +119,14 @@ class MainGUI:
                     self.stream = VideoStream(self.video_label, f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}")
                     self.stream.start()
                 self.load_thumbnail(self.current_image)
+                self.toggle_thumbnail(None)  # Expande o thumbnail automaticamente
                 self.logger.info(f"Initialized with: {self.current_image}")
 
     def monitor_folder(self):
         ip = socket.gethostbyname(socket.gethostname())
-        folder_map = {"192.9.100.100": "0000", "192.9.100.102": "0001", "192.9.100.106": "0002", "192.9.100.109": "0003", "192.9.100.114": "0004", "192.9.100.118": "0005", "192.9.100.123": "0006"}
+        folder_map = IP_FOLDER_MAPPING
         folder = folder_map.get(ip, "0000")
-        image_folder = r"\\srvftp\monitoramento\FTP\{}".format(folder)
+        image_folder = os.path.join(BASE_PATH, folder)
         last_files = set()
         
         while True:
@@ -149,22 +145,6 @@ class MainGUI:
                 last_files = current_files
             time.sleep(1)
 
-    def process_next_image(self):
-        if not self.image_queue.empty() and self.current_image is None and not MainGUI.processing_lock:
-            self.current_image = self.image_queue.get()
-            match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
-            if match:
-                camera_name = match.group(3)
-                self.current_camera_number = self.camera_map.get(camera_name, "0")
-                if self.stream:
-                    self.stream.stop()
-                self.stream = VideoStream(self.video_label, f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}")
-                self.stream.start()
-            self.show_interface(self.current_image)
-        else:
-            self.current_image = None
-            self.logger.info("No more images or processing locked")
-
     def show_interface(self, image_path):
         self.logger.info(f"Showing interface for: {image_path}")
         self.root.deiconify()
@@ -177,7 +157,7 @@ class MainGUI:
             img.thumbnail((100, 100))
             self.thumbnail = ImageTk.PhotoImage(img)
             self.thumbnail_label.configure(image=self.thumbnail)
-            self.thumbnail_label.image = self.thumbnail
+            self.thumbnail_label.image = self.thumbnail  # Mantém referência
             full_img = Image.open(image_path).resize((self.root.winfo_screenwidth(), self.root.winfo_screenheight()), Image.Resampling.LANCZOS)
             self.full_image = ImageTk.PhotoImage(full_img)
             self.is_fullscreen = False
@@ -199,7 +179,7 @@ class MainGUI:
             self.metadata_label.configure(text="Error loading image")
 
     def toggle_thumbnail(self, event):
-        if not self.is_fullscreen:
+        if not self.is_fullscreen and self.thumbnail:
             self.image_label.configure(image=self.full_image)
             self.image_label.place(relx=0.5, rely=0.5, anchor="center", width=self.root.winfo_screenwidth(), height=self.root.winfo_screenheight())
             self.image_label.lift()
@@ -207,7 +187,7 @@ class MainGUI:
             self.button_frame.lift()
             self.is_fullscreen = True
             self.logger.info("Thumbnail expanded")
-        else:
+        elif self.is_fullscreen:
             self.image_label.configure(image='')
             self.image_label.place(relx=0.5, rely=0.5, anchor="center")
             self.video_label.lift()
