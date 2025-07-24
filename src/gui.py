@@ -12,6 +12,8 @@ from queue import Queue
 import socket
 
 class MainGUI:
+    processing_lock = True  # Global lock to prevent processing until "Sem motivo aparente" is clicked
+
     def __init__(self, root):
         self.root = root
         self.root.title("Motion Detection")
@@ -70,7 +72,7 @@ class MainGUI:
         self.logger.info(f"Button clicked: {text}")
 
     def next_image(self, event):
-        if self.current_image is not None:
+        if self.current_image is not None and not MainGUI.processing_lock:
             self.process_next_image()
             self.logger.info("Moved to next image with Ctrl+N")
 
@@ -78,6 +80,7 @@ class MainGUI:
         if self.current_image and os.path.exists(self.current_image):
             os.remove(self.current_image)
             self.logger.info(f"Deleted image: {self.current_image}")
+            MainGUI.processing_lock = False  # Unlock processing
             if not self.image_queue.empty():
                 self.current_image = self.image_queue.get()
                 filename = os.path.basename(self.current_image)
@@ -95,6 +98,7 @@ class MainGUI:
             else:
                 self.current_image = None
                 self.logger.info("No more images in queue")
+            MainGUI.processing_lock = True  # Relock after processing
 
     def fetch_camera_names(self):
         try:
@@ -137,7 +141,7 @@ class MainGUI:
             for image in images:
                 self.image_queue.put(image)
             self.logger.info(f"Queued {len(images)} initial images")
-            if not self.current_image and not self.image_queue.empty():
+            if not self.current_image and not self.image_queue.empty() and not MainGUI.processing_lock:
                 self.current_image = self.image_queue.get()
                 filename = os.path.basename(self.current_image)
                 match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
@@ -152,7 +156,7 @@ class MainGUI:
             self.logger.warning(f"Image folder not found: {image_folder}")
 
     def process_next_image(self):
-        if not self.image_queue.empty() and self.current_image is None:
+        if not self.image_queue.empty() and self.current_image is None and not MainGUI.processing_lock:
             self.current_image = self.image_queue.get()
             filename = os.path.basename(self.current_image)
             match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
@@ -167,7 +171,7 @@ class MainGUI:
             self.show_interface(self.current_image)
         else:
             self.current_image = None
-            self.logger.info("No more images to process or currently processing")
+            self.logger.info("No more images to process, currently processing, or processing locked")
 
     def show_interface(self, image_path):
         self.logger.info(f"Showing interface for image: {image_path}")
