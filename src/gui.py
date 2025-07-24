@@ -111,8 +111,10 @@ class MainGUI:
             for image in images:
                 self.image_queue.put(image)
             self.logger.info(f"Queued {len(images)} images")
-            if not self.current_image and not self.image_queue.empty() and not MainGUI.processing_lock:
+            if not self.current_image and not self.image_queue.empty():
+                MainGUI.processing_lock = False  # Libera lock para carregar primeira imagem
                 self.current_image = self.image_queue.get()
+                self.fetch_camera_names()  # Garante que camera_map esteja preenchido
                 match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
                 if match:
                     camera_name = match.group(3)
@@ -120,12 +122,14 @@ class MainGUI:
                     self.stream = VideoStream(self.video_label, f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}")
                     self.stream.start()
                 self.load_thumbnail(self.current_image)
+                MainGUI.processing_lock = True  # Reloca após carregar
         else:
             self.logger.warning(f"Folder not found: {image_folder}")
 
     def process_next_image(self):
         if not self.image_queue.empty() and self.current_image is None and not MainGUI.processing_lock:
             self.current_image = self.image_queue.get()
+            self.fetch_camera_names()
             match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", os.path.basename(self.current_image))
             if match:
                 camera_name = match.group(3)
