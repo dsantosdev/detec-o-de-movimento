@@ -21,6 +21,7 @@ class MainGUI:
         self.camera_map = {}
         self.image_queue = Queue()  # Queue for image processing
         self.current_image = None
+        self.current_camera_number = None  # Track current camera number
         
         # Set window to always on top
         self.root.attributes('-topmost', True)
@@ -77,7 +78,23 @@ class MainGUI:
         if self.current_image and os.path.exists(self.current_image):
             os.remove(self.current_image)
             self.logger.info(f"Deleted image: {self.current_image}")
-            self.process_next_image()  # Move to next image and update video/thumbnail
+            if not self.image_queue.empty():
+                self.current_image = self.image_queue.get()
+                filename = os.path.basename(self.current_image)
+                match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
+                if match:
+                    camera_name = match.group(3)
+                    self.current_camera_number = self.camera_map.get(camera_name, "0")
+                    stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}"
+                    if self.stream:
+                        self.stream.stop()  # Stop current stream
+                    self.stream = VideoStream(self.video_label, stream_url)
+                    self.stream.start()
+                    self.load_thumbnail(self.current_image)
+                self.logger.info(f"Updated video and thumbnail for next image: {self.current_image}")
+            else:
+                self.current_image = None
+                self.logger.info("No more images in queue")
 
     def fetch_camera_names(self):
         try:
@@ -122,13 +139,31 @@ class MainGUI:
             self.logger.info(f"Queued {len(images)} initial images")
             if not self.current_image and not self.image_queue.empty():
                 self.current_image = self.image_queue.get()
-                self.show_interface(self.current_image)
+                filename = os.path.basename(self.current_image)
+                match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
+                if match:
+                    camera_name = match.group(3)
+                    self.current_camera_number = self.camera_map.get(camera_name, "0")
+                    stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}"
+                    self.stream = VideoStream(self.video_label, stream_url)
+                    self.stream.start()
+                self.load_thumbnail(self.current_image)
         else:
             self.logger.warning(f"Image folder not found: {image_folder}")
 
     def process_next_image(self):
         if not self.image_queue.empty() and self.current_image is None:
             self.current_image = self.image_queue.get()
+            filename = os.path.basename(self.current_image)
+            match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
+            if match:
+                camera_name = match.group(3)
+                self.current_camera_number = self.camera_map.get(camera_name, "0")
+                stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={self.current_camera_number}"
+                if self.stream:
+                    self.stream.stop()  # Stop current stream
+                self.stream = VideoStream(self.video_label, stream_url)
+                self.stream.start()
             self.show_interface(self.current_image)
         else:
             self.current_image = None
@@ -138,17 +173,6 @@ class MainGUI:
         self.logger.info(f"Showing interface for image: {image_path}")
         self.root.deiconify()
         self.root.attributes('-fullscreen', True)
-        self.fetch_camera_names()
-        filename = os.path.basename(image_path)
-        match = re.match(r"(\d{8}-\d{6})_([\d.]+)_(.+)_(\d{4})\.jpg", filename)
-        camera_name = match.group(3) if match else "Unknown"
-        camera_number = self.camera_map.get(camera_name, "0")
-        stream_url = f"http://admin:@Dm1n@localhost/mjpegstream.cgi?camera={camera_number}"
-        print(f"Stream URL: {stream_url}")
-        self.logger.info(f"Using stream URL: {stream_url}")
-        if self.stream is None:
-            self.stream = VideoStream(self.video_label, stream_url)
-            self.stream.start()
         self.load_thumbnail(image_path)
 
     def load_thumbnail(self, image_path):
