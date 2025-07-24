@@ -57,12 +57,18 @@ class MainGUI:
         
         self.log_window = None
         self.root.bind("<Control-F12>", self.toggle_log_window)
+        self.root.bind("<Control-n>", self.next_image)  # Ctrl+N to move to next image
         
         self.root.withdraw()
         self.check_initial_images()
 
     def button_action(self, text):
         self.logger.info(f"Button clicked: {text}")
+
+    def next_image(self, event):
+        if self.current_image is not None:
+            self.process_next_image()
+            self.logger.info("Moved to next image with Ctrl+N")
 
     def fetch_camera_names(self):
         try:
@@ -183,7 +189,7 @@ class MainGUI:
             self.image_label.unbind("<Button-1>")
             self.is_fullscreen = False
             self.logger.info("Thumbnail minimized")
-            self.process_next_image()  # Process next image only after minimizing
+            # Removed automatic process_next_image() call
 
     def toggle_log_window(self, event):
         if self.log_window is None or not self.log_window.winfo_exists():
